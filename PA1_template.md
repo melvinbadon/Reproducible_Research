@@ -39,18 +39,19 @@ The dataset is stored in a comma-separated-value (CSV) file and there are a tota
 
 ###Loading and preprocessing the data
 
-```{r, echo = TRUE}
+
+```r
   if (!file.exists("activity.csv")) {
     unzip("activity.zip")
   }
 
 activity_data <- read.csv("activity.csv")
-
 ```
 
 Format the date variable into a date type since it is currently formatted as a string.
 
-```{r, echo = TRUE}
+
+```r
   activity_data$date<-as.Date(activity_data$date, format = '%Y-%m-%d')
 ```
 
@@ -59,64 +60,76 @@ Format the date variable into a date type since it is currently formatted as a s
 ###What is mean total number of steps taken per day?
 
 Aggregate steps taken by date
-```{r, echo=TRUE}
+
+```r
 steps_daily <- aggregate(steps~date, activity_data,sum, na.rm=TRUE)
 ```
 
 
 Histogram of the total number of steps taken each day.
-```{r,echo=TRUE}
+
+```r
   histogram<-barplot(steps_daily$steps, names.arg =steps_daily$date, xlab = "Date",ylab="Total Daily Steps", main="Number of Steps per Day")
 ```
 
+![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-4-1.png) 
+
 Calculate the mean and median total number of steps taken per day.
-```{r, echo=TRUE}
+
+```r
 mean_steps_daily<- format(mean(steps_daily$steps,na.rm=TRUE),digits = 2, scientific = FALSE)
 median_steps_daily<- format(median(steps_daily$steps,na.rm=TRUE), digits = 2, scientific=FALSE)
 ```
 
-The daily `mean` steps is `r mean_steps_daily` and the `median` is `r median_steps_daily`.
+The daily `mean` steps is 10766 and the `median` is 10765.
 
   
 
 ###What is the average daily activity pattern?
 
 Getting the average number of steps taken.
-```{r, echo=TRUE}
+
+```r
 ave_interval <- aggregate(steps ~ interval, activity_data, mean)
 ```
 
 
 Below is a time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis).
-```{r,echo=TRUE}
+
+```r
 plot(ave_interval, type = "l", xlab="Interval", ylab="Average Steps", main="Average steps per interval")
 ```
 
+![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-7-1.png) 
+
 Getting the maximum number of steps.
 
-```{r, echo=TRUE}
+
+```r
 max_steps <- ave_interval$interval[which.max(ave_interval$steps)]
 ```
 
-Interval `r max_steps` has the maximum number of steps.
+Interval 835 has the maximum number of steps.
 
 
 
 ###Imputing missing values
 
 Calculating the total number of rows with missing values in the dataset.
-```{r, echo=TRUE}
+
+```r
 na_rows <- format(sum(!complete.cases(activity_data)), digit = 2,scientific = FALSE)
 ```
 
-There are `r na_rows` rows with NAs.
+There are 2304 rows with NAs.
 
 
 * Using the mean to fill the missing value
 
 
 Filling up the missing values.
-```{r, echo=TRUE}
+
+```r
 activity_data <- merge(activity_data,ave_interval, by = "interval", suffixes = c("", 
     ".y"))
 nas <- is.na(activity_data$steps)
@@ -126,32 +139,50 @@ activity_data <- activity_data[, c(1:3)]
 
 
 Histogram of the total number of steps taken each day with the imputed data.
-```{r,echo=TRUE}
+
+```r
 total_steps_per_day <- aggregate(steps ~ date,activity_data,sum)
 barplot(total_steps_per_day$steps, names.arg = total_steps_per_day$date, xlab = "Date", ylab = "Total number of Steps",main="Total Steps per Day")
 ```
 
+![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-11-1.png) 
+
 Calculating for the mean and median with the imputed values included.
-```{r, echo=TRUE}
+
+```r
 imputed_mean_steps <- format(mean(total_steps_per_day$steps), digits = 2, scientific = FALSE)
 imputed_median_steps <- format(median(total_steps_per_day$steps), digits = 2,scientific = FALSE)
 ```
 
-The mean of steps taken per day is `r imputed_mean_steps` while the median is `r imputed_median_steps`.
+The mean of steps taken per day is 10766 while the median is 10766.
 
 
 ###Are there differences in activity patterns between weekdays and weekends?
 
 Creating a new factor variable in the dataset with two levels: `“weekday` and `“weekend”`, indicating whether a given date is a weekday or weekend.
-```{r, echo=TRUE}
+
+```r
 activity_data$dayType <- ifelse(weekdays(activity_data$date) %in%  c("Saturday", "Sunday"),'weekend','weekday')
 
 head(activity_data)
 ```
 
+```
+##   interval    steps       date dayType
+## 1        0 1.716981 2012-10-01 weekday
+## 2        0 0.000000 2012-11-23 weekday
+## 3        0 0.000000 2012-10-28 weekend
+## 4        0 0.000000 2012-11-06 weekday
+## 5        0 0.000000 2012-11-24 weekend
+## 6        0 0.000000 2012-11-15 weekday
+```
+
 Below is panel plot that shows the difference in weekday and weekend patterns.
 
-```{r, echo=TRUE}
+
+```r
 library(ggplot2)
 qplot(x=interval, y=steps,data=subset(activity_data, complete.cases(activity_data)),geom='smooth', stat='summary', fun.y=mean) + facet_grid(dayType~.) + facet_wrap(~dayType,nrow=2) + theme(strip.background = element_rect(fill="#22e5cc")) + labs(title=' Average steps per day: weekdays vs weekend patterns')
 ```
+
+![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-14-1.png) 
